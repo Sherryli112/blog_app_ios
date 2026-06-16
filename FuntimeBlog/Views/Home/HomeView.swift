@@ -3,7 +3,6 @@ import SwiftUI
 struct HomeView: View {
     let scrollToTopTrigger: Int
     @State private var viewModel = HomeViewModel()
-    @State private var scrollPosition = ScrollPosition(idType: String.self)
 
     var body: some View {
         Group {
@@ -40,37 +39,40 @@ struct HomeView: View {
         .onChange(of: viewModel.sortMode) { _, _ in
             Task { await viewModel.onSortModeChange() }
         }
-        .onChange(of: scrollToTopTrigger) { _, _ in
-            withAnimation { scrollPosition.scrollTo(id: viewModel.articles.first?.id) }
-        }
     }
 
     private var articleList: some View {
-        ScrollView {
-            LazyVStack(spacing: AppTheme.Spacing.lg) {
-                ForEach(viewModel.articles) { article in
-                    NavigationLink(value: article) {
-                        ArticleCard(article: article)
-                    }
-                    .buttonStyle(PressableCardStyle())
-                    .onAppear {
-                        if article.id == viewModel.articles.last?.id {
-                            Task { await viewModel.loadMore() }
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: AppTheme.Spacing.lg) {
+                    ForEach(viewModel.articles) { article in
+                        NavigationLink(value: article) {
+                            ArticleCard(article: article)
+                        }
+                        .buttonStyle(PressableCardStyle())
+                        .id(article.id)
+                        .onAppear {
+                            if article.id == viewModel.articles.last?.id {
+                                Task { await viewModel.loadMore() }
+                            }
                         }
                     }
+                    if viewModel.isLoadingMore {
+                        ProgressView().padding()
+                    }
                 }
-                if viewModel.isLoadingMore {
-                    ProgressView().padding()
+                .padding(AppTheme.Spacing.lg)
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .refreshable { await viewModel.reload() }
+            .navigationDestination(for: Article.self) { article in
+                ArticleDetailView(article: article)
+            }
+            .onChange(of: scrollToTopTrigger) { _, _ in
+                if let first = viewModel.articles.first {
+                    withAnimation { proxy.scrollTo(first.id, anchor: .top) }
                 }
             }
-            .padding(AppTheme.Spacing.lg)
-            .scrollTargetLayout()
-        }
-        .scrollPosition($scrollPosition)
-        .scrollDismissesKeyboard(.interactively)
-        .refreshable { await viewModel.reload() }
-        .navigationDestination(for: Article.self) { article in
-            ArticleDetailView(article: article)
         }
     }
 }

@@ -6,6 +6,8 @@ struct ProfileView: View {
     @Environment(ReadingHistoryStore.self) private var history
     @Environment(GameStore.self) private var gameStore
 
+    @State private var showLogin = false
+
     var body: some View {
         if authStore.isLoggedIn {
             loggedInView
@@ -15,16 +17,32 @@ struct ProfileView: View {
     }
 
     private var guestView: some View {
-        ScrollView {
-            VStack(spacing: AppTheme.Spacing.xl) {
-                GamificationDashboard()
-                    .padding(.horizontal, AppTheme.Spacing.lg)
-                Divider()
-                LoginView()
+        VStack(spacing: AppTheme.Spacing.xl) {
+            Spacer()
+            Image(systemName: "person.circle")
+                .font(.system(size: 80))
+                .foregroundStyle(AppTheme.Color.primary.opacity(0.4))
+            Text("登入以使用完整功能")
+                .font(.title3.bold())
+            Text("簽到、收集旅遊印章、追蹤閱讀歷史")
+                .font(AppTheme.Font.meta)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            VStack(spacing: AppTheme.Spacing.md) {
+                Button("登入 / 註冊") { showLogin = true }
+                    .primaryButtonStyle()
+                    .padding(.horizontal, AppTheme.Spacing.xl)
             }
+            Spacer()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(AppTheme.Color.background)
         .navigationTitle("個人")
         .navigationBarTitleDisplayMode(.large)
+        .sheet(isPresented: $showLogin) {
+            LoginView()
+                .environment(authStore)
+        }
     }
 
     private var loggedInView: some View {

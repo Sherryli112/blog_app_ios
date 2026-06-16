@@ -20,7 +20,7 @@ struct ArticlePage {
     var hasMore: Bool { page < pageCount }
 }
 
-struct ArticleQuery: Equatable {
+struct ArticleQuery: Hashable {
     var category: String?
     var city: String?
     var tag: String?

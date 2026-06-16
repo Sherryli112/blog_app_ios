@@ -3,25 +3,27 @@ import Observation
 
 @Observable
 final class AuthStore {
-    private static let tokenKey = "jwt_token"
+    private static let userKey = "logged_in_user"
 
     private(set) var user: User?
-    private(set) var token: String?
-    var isLoggedIn: Bool { token != nil }
+    var isLoggedIn: Bool { user != nil }
 
     init() {
-        token = KeychainHelper.load(for: Self.tokenKey)
+        if let data = UserDefaults.standard.data(forKey: Self.userKey),
+           let saved = try? JSONDecoder().decode(User.self, from: data) {
+            user = saved
+        }
     }
 
-    func save(token: String, user: User) {
-        self.token = token
+    func save(user: User) {
         self.user = user
-        KeychainHelper.save(token, for: Self.tokenKey)
+        if let data = try? JSONEncoder().encode(user) {
+            UserDefaults.standard.set(data, forKey: Self.userKey)
+        }
     }
 
     func logout() {
-        token = nil
         user = nil
-        KeychainHelper.delete(for: Self.tokenKey)
+        UserDefaults.standard.removeObject(forKey: Self.userKey)
     }
 }

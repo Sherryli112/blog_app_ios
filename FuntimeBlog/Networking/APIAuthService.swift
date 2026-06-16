@@ -37,6 +37,33 @@ struct APIAuthService {
         }
     }
 
+    func register(username: String, email: String, password: String) async throws -> (token: String, user: User) {
+        struct RegisterRequest: Encodable {
+            let username: String
+            let email: String
+            let password: String
+        }
+        let body = RegisterRequest(username: username, email: email, password: password)
+        let url = FunTimeAPI.proxyBase.appendingPathComponent("auth/local/register")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw APIError.badURL }
+        guard (200..<300).contains(http.statusCode) else {
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let error = json["error"] as? [String: Any],
+               let message = error["message"] as? String {
+                throw AuthError.invalidCredentials(message)
+            }
+            throw APIError.badStatus(http.statusCode)
+        }
+        let result = try JSONDecoder().decode(LoginResponse.self, from: data)
+        return (result.jwt, result.user)
+    }
+
     func fetchMe(token: String) async throws -> User {
         var request = URLRequest(url: FunTimeAPI.proxyBase.appendingPathComponent("users/me"))
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")

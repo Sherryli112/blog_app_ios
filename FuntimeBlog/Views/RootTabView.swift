@@ -18,31 +18,35 @@ struct RootTabView: View {
 
     var body: some View {
         TabView(selection: selectionBinding) {
-            Tab("首頁", systemImage: "flame.fill", value: 0) {
-                NavigationStack {
-                    HomeView(scrollToTopTrigger: scrollToTopTriggers[0, default: 0])
-                }
+            NavigationStack {
+                HomeView(scrollToTopTrigger: scrollToTopTriggers[0, default: 0])
             }
-            Tab("分類", systemImage: "square.grid.2x2", value: 1) {
-                NavigationStack {
-                    CategoryView()
-                }
+            .tabItem { Label("首頁", systemImage: "flame.fill") }
+            .tag(0)
+
+            NavigationStack {
+                CategoryView()
             }
-            Tab("搜尋", systemImage: "magnifyingglass", value: 2) {
-                NavigationStack {
-                    SearchView()
-                }
+            .tabItem { Label("分類", systemImage: "square.grid.2x2") }
+            .tag(1)
+
+            NavigationStack {
+                SearchView()
             }
-            Tab("收藏", systemImage: "heart.fill", value: 3) {
-                NavigationStack {
-                    FavoritesView(scrollToTopTrigger: scrollToTopTriggers[3, default: 0])
-                }
+            .tabItem { Label("搜尋", systemImage: "magnifyingglass") }
+            .tag(2)
+
+            NavigationStack {
+                FavoritesView(scrollToTopTrigger: scrollToTopTriggers[3, default: 0])
             }
-            Tab("個人", systemImage: "person.fill", value: 4) {
-                NavigationStack {
-                    ProfileView()
-                }
+            .tabItem { Label("收藏", systemImage: "heart.fill") }
+            .tag(3)
+
+            NavigationStack {
+                ProfileView()
             }
+            .tabItem { Label("個人", systemImage: "person.fill") }
+            .tag(4)
         }
         .tint(AppTheme.Color.primary)
         .fontDesign(.rounded)
@@ -54,4 +58,5 @@ struct RootTabView: View {
         .environment(FavoritesStore())
         .environment(ReadingHistoryStore())
         .environment(AuthStore())
+        .environment(GameStore())
 }
