@@ -38,6 +38,11 @@ struct RootTabView: View {
                     FavoritesView(scrollToTopTrigger: scrollToTopTriggers[3, default: 0])
                 }
             }
+            Tab("個人", systemImage: "person.fill", value: 4) {
+                NavigationStack {
+                    ProfileView()
+                }
+            }
         }
         .tint(AppTheme.Color.primary)
         .fontDesign(.rounded)
@@ -48,4 +53,5 @@ struct RootTabView: View {
     RootTabView()
         .environment(FavoritesStore())
         .environment(ReadingHistoryStore())
+        .environment(AuthStore())
 }
