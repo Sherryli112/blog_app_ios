@@ -1,0 +1,84 @@
+import SwiftUI
+
+struct HomeView: View {
+    let scrollToTopTrigger: Int
+    @State private var viewModel = HomeViewModel()
+    @State private var scrollPosition = ScrollPosition(idType: String.self)
+
+    var body: some View {
+        Group {
+            switch viewModel.loadState {
+            case .idle, .loading where viewModel.articles.isEmpty:
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .failed(let message) where viewModel.articles.isEmpty:
+                ContentUnavailableView {
+                    Label("載入失敗", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(message)
+                } actions: {
+                    Button("重試") { Task { await viewModel.reload() } }
+                }
+            default:
+                articleList
+            }
+        }
+        .navigationTitle("FunTime")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Picker("排序", selection: $viewModel.sortMode) {
+                    ForEach(HomeViewModel.SortMode.allCases, id: \.self) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .fixedSize()
+            }
+        }
+        .task { await viewModel.load() }
+        .onChange(of: viewModel.sortMode) { _, _ in
+            Task { await viewModel.onSortModeChange() }
+        }
+        .onChange(of: scrollToTopTrigger) { _, _ in
+            withAnimation { scrollPosition.scrollTo(id: viewModel.articles.first?.id) }
+        }
+    }
+
+    private var articleList: some View {
+        ScrollView {
+            LazyVStack(spacing: AppTheme.Spacing.lg) {
+                ForEach(viewModel.articles) { article in
+                    NavigationLink(value: article) {
+                        ArticleCard(article: article)
+                    }
+                    .buttonStyle(PressableCardStyle())
+                    .onAppear {
+                        if article.id == viewModel.articles.last?.id {
+                            Task { await viewModel.loadMore() }
+                        }
+                    }
+                }
+                if viewModel.isLoadingMore {
+                    ProgressView().padding()
+                }
+            }
+            .padding(AppTheme.Spacing.lg)
+            .scrollTargetLayout()
+        }
+        .scrollPosition($scrollPosition)
+        .scrollDismissesKeyboard(.interactively)
+        .refreshable { await viewModel.reload() }
+        .navigationDestination(for: Article.self) { article in
+            ArticleDetailView(article: article)
+        }
+    }
+}
+
+#Preview {
+    NavigationStack {
+        HomeView(scrollToTopTrigger: 0)
+    }
+    .environment(FavoritesStore())
+    .environment(ReadingHistoryStore())
+}
