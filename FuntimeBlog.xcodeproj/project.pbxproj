@@ -90,7 +90,7 @@
 			knownRegions = (
 				en,
 				Base,
-				zh-Hant,
+				"zh-Hant",
 			);
 			mainGroup = FB0000010000000000000004;
 			minimizedProjectReferenceProxies = 1;
@@ -306,20 +306,20 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		FB000001000000000000000B /* Build configuration list for PBXProject "FuntimeBlog" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				FB000001000000000000000C /* Debug */,
-				FB000001000000000000000D /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		FB0000010000000000000007 /* Build configuration list for PBXNativeTarget "FuntimeBlog" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				FB000001000000000000000E /* Debug */,
 				FB000001000000000000000F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FB000001000000000000000B /* Build configuration list for PBXProject "FuntimeBlog" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FB000001000000000000000C /* Debug */,
+				FB000001000000000000000D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

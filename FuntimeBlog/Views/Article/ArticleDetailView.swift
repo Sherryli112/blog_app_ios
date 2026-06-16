@@ -4,6 +4,7 @@ struct ArticleDetailView: View {
     @State private var viewModel: ArticleDetailViewModel
     @Environment(FavoritesStore.self) private var favorites
     @Environment(ReadingHistoryStore.self) private var history
+    @Environment(GameStore.self) private var gameStore
     @Environment(\.openURL) private var openURL
     @State private var isFavorite = false
 
@@ -75,6 +76,10 @@ struct ArticleDetailView: View {
         .task {
             isFavorite = favorites.isFavorite(article)
             history.append(article)
+            gameStore.addXPForReading()
+            if let city = article.tags.first {
+                gameStore.collectStamp(city: city)
+            }
             await viewModel.load()
         }
     }
@@ -86,4 +91,5 @@ struct ArticleDetailView: View {
     }
     .environment(FavoritesStore())
     .environment(ReadingHistoryStore())
+    .environment(GameStore())
 }

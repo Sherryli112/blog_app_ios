@@ -4,15 +4,27 @@ struct ProfileView: View {
     @Environment(AuthStore.self) private var authStore
     @Environment(FavoritesStore.self) private var favorites
     @Environment(ReadingHistoryStore.self) private var history
+    @Environment(GameStore.self) private var gameStore
 
     var body: some View {
         if authStore.isLoggedIn {
             loggedInView
         } else {
-            LoginView()
-                .navigationTitle("個人")
-                .navigationBarTitleDisplayMode(.large)
+            guestView
         }
+    }
+
+    private var guestView: some View {
+        ScrollView {
+            VStack(spacing: AppTheme.Spacing.xl) {
+                GamificationDashboard()
+                    .padding(.horizontal, AppTheme.Spacing.lg)
+                Divider()
+                LoginView()
+            }
+        }
+        .navigationTitle("個人")
+        .navigationBarTitleDisplayMode(.large)
     }
 
     private var loggedInView: some View {
@@ -35,13 +47,30 @@ struct ProfileView: View {
             }
 
             Section {
+                GamificationDashboard()
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+            }
+
+            Section {
                 HStack {
                     statCell(count: favorites.articles.count, label: "收藏")
                     Divider()
                     statCell(count: history.articles.count, label: "閱讀")
+                    Divider()
+                    statCell(count: gameStore.profile.stamps.count, label: "印章")
                 }
                 .frame(height: 60)
                 .listRowSeparator(.hidden)
+            }
+
+            Section("探索") {
+                NavigationLink {
+                    PassportView()
+                } label: {
+                    Label("旅遊護照", systemImage: "doc.text.fill")
+                }
             }
 
             Section("帳號") {
@@ -77,4 +106,5 @@ struct ProfileView: View {
     .environment(AuthStore())
     .environment(FavoritesStore())
     .environment(ReadingHistoryStore())
+    .environment(GameStore())
 }
