@@ -51,7 +51,8 @@ private struct ArticleSummaryDTO: Decodable {
             imageURL: FunTimeAPI.imageURL(cover?.url),
             slug: slug,
             excerpt: excerpt ?? "",
-            contentHTML: nil
+            contentHTML: nil,
+            city: city?.displayName
         )
     }
 }
@@ -79,7 +80,8 @@ private struct ArticleDetailDTO: Decodable {
             imageURL: FunTimeAPI.imageURL(cover?.url),
             slug: slug,
             excerpt: excerpt ?? "",
-            contentHTML: content
+            contentHTML: content,
+            city: nil  // detail endpoint 無獨立城市欄位；印章使用 summary.city
         )
     }
 }
@@ -135,7 +137,8 @@ struct APIArticleService: ArticleServing {
     }
 
     func articleDetail(slug: String) async throws -> Article {
-        let dto: ArticleDetailDTO = try await FunTimeAPI.get("articles/slug/\(slug)")
+        let encodedSlug = slug.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? slug
+        let dto: ArticleDetailDTO = try await FunTimeAPI.get("articles/slug/\(encodedSlug)")
         return dto.toArticle()
     }
 

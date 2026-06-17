@@ -9,12 +9,23 @@ enum ArticleHTML {
         )
     }
 
+    private static func htmlEscape(_ s: String) -> String {
+        s.replacingOccurrences(of: "&", with: "&amp;")
+         .replacingOccurrences(of: "<", with: "&lt;")
+         .replacingOccurrences(of: ">", with: "&gt;")
+         .replacingOccurrences(of: "\"", with: "&quot;")
+         .replacingOccurrences(of: "'", with: "&#39;")
+    }
+
     static func page(title: String, author: String, dateText: String,
                      tags: [String], coverURL: URL?, contentHTML: String) -> String {
         let cover = coverURL?.absoluteString
         let bgStyle = cover.map { "background-image:url('\($0)');" } ?? ""
         let bgClass = cover == nil ? "hero__bg hero__bg--fallback" : "hero__bg"
-        let tagsHTML = tags.map { "<span class=\"tag\">\($0)</span>" }.joined()
+        let tagsHTML = tags.map { "<span class=\"tag\">\(htmlEscape($0))</span>" }.joined()
+        let safeTitle = htmlEscape(title)
+        let safeAuthor = htmlEscape(author)
+        let safeDate = htmlEscape(dateText)
         let body = sanitize(contentHTML)
 
         return """
@@ -85,8 +96,8 @@ enum ArticleHTML {
             <div class="\(bgClass)" style="\(bgStyle)"></div>
             <div class="meta">
               <div class="tags">\(tagsHTML)</div>
-              <h1>\(title)</h1>
-              <div class="byline">\(author) · \(dateText)</div>
+              <h1>\(safeTitle)</h1>
+              <div class="byline">\(safeAuthor) · \(safeDate)</div>
             </div>
           </header>
           <article>\(body)</article>

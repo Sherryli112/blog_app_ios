@@ -20,6 +20,7 @@ final class FavoriteArticleEntity {
     var slug: String
     var excerpt: String
     var contentHTML: String?
+    var city: String?
     var addedAt: Date
     /// 擁有此收藏的使用者 email（小寫）；訪客為空字串。預設值供既有資料平滑遷移。
     var ownerEmail: String = ""
@@ -35,6 +36,7 @@ final class FavoriteArticleEntity {
         self.slug = article.slug
         self.excerpt = article.excerpt
         self.contentHTML = article.contentHTML
+        self.city = article.city
         self.addedAt = addedAt
         self.ownerEmail = ownerEmail
     }
@@ -42,7 +44,7 @@ final class FavoriteArticleEntity {
     var article: Article {
         Article(id: id, title: title, author: author, authorSlug: authorSlug,
                 date: date, tags: tags, imageURL: imageURL, slug: slug,
-                excerpt: excerpt, contentHTML: contentHTML)
+                excerpt: excerpt, contentHTML: contentHTML, city: city)
     }
 }
 
@@ -59,6 +61,7 @@ final class HistoryEntity {
     var slug: String
     var excerpt: String
     var contentHTML: String?
+    var city: String?
     var viewedAt: Date
     /// 擁有此閱讀紀錄的使用者 email（小寫）；訪客為空字串。預設值供既有資料平滑遷移。
     var ownerEmail: String = ""
@@ -74,6 +77,7 @@ final class HistoryEntity {
         self.slug = article.slug
         self.excerpt = article.excerpt
         self.contentHTML = article.contentHTML
+        self.city = article.city
         self.viewedAt = viewedAt
         self.ownerEmail = ownerEmail
     }
@@ -81,7 +85,7 @@ final class HistoryEntity {
     var article: Article {
         Article(id: id, title: title, author: author, authorSlug: authorSlug,
                 date: date, tags: tags, imageURL: imageURL, slug: slug,
-                excerpt: excerpt, contentHTML: contentHTML)
+                excerpt: excerpt, contentHTML: contentHTML, city: city)
     }
 }
 

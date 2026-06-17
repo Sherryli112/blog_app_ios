@@ -63,7 +63,7 @@ struct LocalAuthService {
             let migrated: [String: LocalUser] = [
                 legacy.email.lowercased(): LocalUser(
                     id: 1, username: legacy.username, email: legacy.email,
-                    passwordHash: legacy.passwordHash
+                    passwordHash: Self.hash(legacy.password)  // 明文轉 hash
                 )
             ]
             saveUsers(migrated)
@@ -78,11 +78,11 @@ struct LocalAuthService {
         KeychainHelper.save(json, for: Self.storeKey)
     }
 
-    /// 舊版單一帳號格式（無 id），僅供遷移解碼使用。
+    /// 舊版單一帳號格式（無 id，密碼以明文 "password" key 儲存），僅供遷移解碼使用。
     private struct LegacyLocalUser: Codable {
         let username: String
         let email: String
-        let passwordHash: String
+        let password: String  // 舊版 key 名稱為 "password"（明文）
     }
 
     private static func hash(_ password: String) -> String {

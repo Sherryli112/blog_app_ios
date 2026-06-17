@@ -3,7 +3,7 @@ import SwiftUI
 struct PassportView: View {
     @Environment(GameStore.self) private var gameStore
 
-    private let allCities = [
+    private let predefinedCities = [
         "台北", "台中", "台南", "高雄", "宜蘭", "花蓮",
         "東京", "關西", "北海道", "沖繩",
         "首爾", "釜山",
@@ -12,15 +12,22 @@ struct PassportView: View {
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: AppTheme.Spacing.md), count: 4)
 
+    /// 預設城市 + 任何從文章收集到但不在預設清單的城市（例如上海、京都等）
+    private func displayCities(stamps: [String]) -> [String] {
+        let extra = stamps.filter { !predefinedCities.contains($0) }
+        return predefinedCities + extra
+    }
+
     var body: some View {
         let stamps = gameStore.profile.stamps
+        let cities = displayCities(stamps: stamps)
         ScrollView {
             VStack(alignment: .leading, spacing: AppTheme.Spacing.xl) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("旅遊護照")
                             .font(.title.bold())
-                        Text("已收集 \(stamps.count) / \(allCities.count) 個城市印章")
+                        Text("已收集 \(stamps.count) / \(cities.count) 個城市印章")
                             .font(AppTheme.Font.meta)
                             .foregroundStyle(.secondary)
                     }
@@ -34,7 +41,7 @@ struct PassportView: View {
                 .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.card))
 
                 LazyVGrid(columns: columns, spacing: AppTheme.Spacing.lg) {
-                    ForEach(allCities, id: \.self) { city in
+                    ForEach(cities, id: \.self) { city in
                         stampCell(city: city, collected: stamps.contains(city))
                     }
                 }

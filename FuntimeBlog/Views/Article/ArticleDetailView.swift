@@ -80,8 +80,7 @@ struct ArticleDetailView: View {
             if case .loaded = viewModel.contentState {
                 history.append(article)
                 gameStore.addXPForReading()
-                // tags 順序為 [theme, city]，取 last 才是城市
-                if let city = article.tags.last {
+                if let city = article.city {
                     gameStore.collectStamp(city: city)
                 }
             }

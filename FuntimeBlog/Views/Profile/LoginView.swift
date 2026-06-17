@@ -72,6 +72,11 @@ struct LoginView: View {
                     Button {
                         isRegistering.toggle()
                         viewModel.errorMessage = nil
+                        viewModel.identifier = ""
+                        viewModel.password = ""
+                        viewModel.username = ""
+                        viewModel.email = ""
+                        focusField = nil
                     } label: {
                         Text(isRegistering ? "已有帳號？登入" : "還沒有帳號？免費註冊")
                             .font(AppTheme.Font.meta)

@@ -11,6 +11,8 @@ struct Article: Identifiable, Hashable, Codable {
     let slug: String
     let excerpt: String
     let contentHTML: String?
+    /// 文章所屬城市（來自 ft_theme），用於旅遊護照印章收集，與 tags 索引無關。
+    let city: String?
 }
 
 struct ArticlePage {
