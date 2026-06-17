@@ -12,7 +12,10 @@ struct CategoryArticleListView: View {
     var body: some View {
         Group {
             switch viewModel.loadState {
-            case .idle, .loading where viewModel.articles.isEmpty:
+            case .idle:
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .loading where viewModel.articles.isEmpty:
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             case .failed(let message) where viewModel.articles.isEmpty:

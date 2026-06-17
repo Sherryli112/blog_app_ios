@@ -1,29 +1,41 @@
 import Foundation
 import Observation
+import SwiftData
 
 @Observable
 final class AuthStore {
-    private static let userKey = "logged_in_user"
+    private let context: ModelContext
 
     private(set) var user: User?
     var isLoggedIn: Bool { user != nil }
 
-    init() {
-        if let data = UserDefaults.standard.data(forKey: Self.userKey),
-           let saved = try? JSONDecoder().decode(User.self, from: data) {
-            user = saved
-        }
+    init(context: ModelContext) {
+        self.context = context
+        user = Self.fetchEntity(in: context)?.user
+    }
+
+    /// Preview 用：獨立的記憶體內儲存。
+    convenience init() {
+        self.init(context: PersistenceContainer.makeInMemoryContext())
     }
 
     func save(user: User) {
         self.user = user
-        if let data = try? JSONEncoder().encode(user) {
-            UserDefaults.standard.set(data, forKey: Self.userKey)
-        }
+        // 單裝置單一登入狀態：清掉舊紀錄再寫入。
+        try? context.delete(model: AuthSessionEntity.self)
+        context.insert(AuthSessionEntity(user: user))
+        try? context.save()
     }
 
     func logout() {
         user = nil
-        UserDefaults.standard.removeObject(forKey: Self.userKey)
+        try? context.delete(model: AuthSessionEntity.self)
+        try? context.save()
+    }
+
+    private static func fetchEntity(in context: ModelContext) -> AuthSessionEntity? {
+        var descriptor = FetchDescriptor<AuthSessionEntity>()
+        descriptor.fetchLimit = 1
+        return try? context.fetch(descriptor).first
     }
 }

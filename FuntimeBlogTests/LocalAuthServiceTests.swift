@@ -4,14 +4,20 @@ import XCTest
 final class LocalAuthServiceTests: XCTestCase {
     let service = LocalAuthService()
 
+    // 多帳號儲存的 key，以及舊版單一帳號 key（遷移來源），測試前後都清乾淨避免互相污染。
+    private let storeKey = "local_auth_users"
+    private let legacyKey = "local_auth_user"
+
     override func setUp() {
         super.setUp()
-        KeychainHelper.delete(for: "local_auth_user")
+        KeychainHelper.delete(for: storeKey)
+        KeychainHelper.delete(for: legacyKey)
     }
 
     override func tearDown() {
+        KeychainHelper.delete(for: storeKey)
+        KeychainHelper.delete(for: legacyKey)
         super.tearDown()
-        KeychainHelper.delete(for: "local_auth_user")
     }
 
     // MARK: - register
@@ -36,23 +42,23 @@ final class LocalAuthServiceTests: XCTestCase {
         )
     }
 
-    func testRegister_secondUserWithDifferentCredentials_throws() throws {
-        // 修正前：第二個使用者會覆蓋第一個
-        // 修正後：應拋出錯誤，保護第一個帳號
+    func testRegister_secondUserWithDifferentCredentials_succeeds() throws {
+        // 多帳號設計：不同 email + 不同暱稱應可成功註冊第二個帳號。
         _ = try service.register(username: "alice", email: "alice@test.com", password: "pass1")
-        XCTAssertThrowsError(
-            try service.register(username: "bob", email: "bob@test.com", password: "pass2"),
-            "裝置已有帳號時，新的不同帳號不應被允許註冊"
-        )
+        let bob = try service.register(username: "bob", email: "bob@test.com", password: "pass2")
+        XCTAssertEqual(bob.email, "bob@test.com")
+        XCTAssertNotEqual(bob.id, 1, "第二個帳號應有不同的 id")
     }
 
-    func testRegister_firstUserStillAccessible_afterBlockedSecondRegistration() throws {
+    func testRegister_existingAccountNotOverwritten_byNewAccount() throws {
+        // 原 #3 的核心保證：註冊新帳號不會覆蓋既有帳號，兩者都能正常登入。
         _ = try service.register(username: "alice", email: "alice@test.com", password: "pass1")
-        _ = try? service.register(username: "bob", email: "bob@test.com", password: "pass2") // 預期失敗
+        _ = try service.register(username: "bob", email: "bob@test.com", password: "pass2")
 
-        // alice 的帳號應依然有效
-        let user = try service.login(identifier: "alice@test.com", password: "pass1")
-        XCTAssertEqual(user.email, "alice@test.com")
+        let alice = try service.login(identifier: "alice@test.com", password: "pass1")
+        let bob = try service.login(identifier: "bob@test.com", password: "pass2")
+        XCTAssertEqual(alice.email, "alice@test.com")
+        XCTAssertEqual(bob.email, "bob@test.com")
     }
 
     // MARK: - login
@@ -82,7 +88,7 @@ final class LocalAuthServiceTests: XCTestCase {
 
     func testPasswordNotStoredInPlainText() throws {
         _ = try service.register(username: "alice", email: "alice@test.com", password: "supersecret")
-        let raw = KeychainHelper.load(for: "local_auth_user") ?? ""
+        let raw = KeychainHelper.load(for: storeKey) ?? ""
         XCTAssertFalse(raw.contains("supersecret"), "密碼不應以明文出現在 Keychain 儲存內容中")
     }
 }

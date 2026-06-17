@@ -1,24 +1,38 @@
 import Foundation
 import Observation
+import SwiftData
 
 @Observable
 final class GameStore {
-    private static let storageKey = "gameProfile"
+    private let context: ModelContext
+    /// 目前資料範圍：登入者 email（小寫），訪客為空字串。
+    private var owner: String = ""
 
-    private(set) var profile: GameProfile
+    private(set) var profile: GameProfile = GameProfile(
+        xp: 0, level: 1, streakDays: 0, lastCheckIn: nil, stamps: []
+    )
 
-    init() {
-        if let data = UserDefaults.standard.data(forKey: Self.storageKey),
-           let decoded = try? JSONDecoder().decode(GameProfile.self, from: data) {
-            profile = decoded
-        } else {
-            profile = GameProfile(xp: 0, level: 1, streakDays: 0, lastCheckIn: nil, stamps: [])
-        }
+    init(context: ModelContext) {
+        self.context = context
+        loadProfile()
     }
 
-    // 供測試使用：以已知 profile 初始化，不觸碰 UserDefaults
-    init(profile: GameProfile) {
+    /// Preview 用：獨立的記憶體內儲存。
+    convenience init() {
+        self.init(context: PersistenceContainer.makeInMemoryContext())
+    }
+
+    /// 測試用：以已知 profile 初始化，不觸碰磁碟。
+    convenience init(profile: GameProfile) {
+        self.init(context: PersistenceContainer.makeInMemoryContext())
         self.profile = profile
+        persist()
+    }
+
+    /// 切換目前使用者（登入/登出時呼叫），並載入該使用者的遊戲檔。
+    func setOwner(_ email: String?) {
+        owner = email?.lowercased() ?? ""
+        loadProfile()
     }
 
     func checkIn() -> Int {
@@ -53,9 +67,33 @@ final class GameStore {
         persist()
     }
 
-    private func persist() {
-        if let data = try? JSONEncoder().encode(profile) {
-            UserDefaults.standard.set(data, forKey: Self.storageKey)
+    /// 載入目前 owner 的遊戲檔；不存在則建立一筆。
+    private func loadProfile() {
+        if let entity = fetchEntity() {
+            profile = entity.profile
+        } else {
+            let initial = GameProfile(xp: 0, level: 1, streakDays: 0, lastCheckIn: nil, stamps: [])
+            profile = initial
+            context.insert(GameProfileEntity(profile: initial, ownerEmail: owner))
+            try? context.save()
         }
+    }
+
+    private func persist() {
+        if let entity = fetchEntity() {
+            entity.apply(profile)
+        } else {
+            context.insert(GameProfileEntity(profile: profile, ownerEmail: owner))
+        }
+        try? context.save()
+    }
+
+    private func fetchEntity() -> GameProfileEntity? {
+        let o = owner
+        var descriptor = FetchDescriptor<GameProfileEntity>(
+            predicate: #Predicate { $0.ownerEmail == o }
+        )
+        descriptor.fetchLimit = 1
+        return try? context.fetch(descriptor).first
     }
 }
