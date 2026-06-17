@@ -75,12 +75,16 @@ struct ArticleDetailView: View {
         }
         .task {
             isFavorite = favorites.isFavorite(article)
-            history.append(article)
-            gameStore.addXPForReading()
-            if let city = article.tags.first {
-                gameStore.collectStamp(city: city)
-            }
             await viewModel.load()
+            // 只在文章成功載入後才記錄閱讀與給予 XP，避免載入失敗時無限刷分
+            if case .loaded = viewModel.contentState {
+                history.append(article)
+                gameStore.addXPForReading()
+                // tags 順序為 [theme, city]，取 last 才是城市
+                if let city = article.tags.last {
+                    gameStore.collectStamp(city: city)
+                }
+            }
         }
     }
 }

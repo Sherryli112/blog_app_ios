@@ -8,6 +8,7 @@ final class SearchViewModel {
     var isSearching = false
     var isLoadingMore = false
     var noResults = false
+    var searchError: String?
 
     private var currentPage = 0
     private var totalPages = 1
@@ -39,6 +40,7 @@ final class SearchViewModel {
         let trimmed = keyword.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
         isSearching = true
+        searchError = nil
         currentPage = 0
         totalPages = 1
         results = []
@@ -63,7 +65,7 @@ final class SearchViewModel {
             totalPages = result.pageCount
             noResults = results.isEmpty
         } catch {
-            // silently ignore search errors
+            searchError = error.localizedDescription
         }
     }
 }

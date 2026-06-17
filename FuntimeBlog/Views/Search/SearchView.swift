@@ -15,6 +15,15 @@ struct SearchView: View {
                     Spacer()
                 }
                 .listRowSeparator(.hidden)
+            } else if let error = viewModel.searchError {
+                ContentUnavailableView {
+                    Label("搜尋失敗", systemImage: "wifi.slash")
+                } description: {
+                    Text(error)
+                } actions: {
+                    Button("重試") { Task { await viewModel.performSearch() } }
+                }
+                .listRowSeparator(.hidden)
             } else if viewModel.noResults {
                 ContentUnavailableView.search(text: viewModel.keyword)
                     .listRowSeparator(.hidden)

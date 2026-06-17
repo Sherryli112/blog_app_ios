@@ -16,9 +16,13 @@ final class GameStore {
         }
     }
 
+    // 供測試使用：以已知 profile 初始化，不觸碰 UserDefaults
+    init(profile: GameProfile) {
+        self.profile = profile
+    }
+
     func checkIn() -> Int {
         guard profile.canCheckInToday else { return 0 }
-        let bonusXP = min(profile.streakDays + 1, 7) * 10
         let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
         let isConsecutive = profile.lastCheckIn.map {
             Calendar.current.isDate($0, inSameDayAs: yesterday)
@@ -26,6 +30,8 @@ final class GameStore {
 
         profile.lastCheckIn = Date()
         profile.streakDays = isConsecutive ? profile.streakDays + 1 : 1
+        // 在更新 streakDays 後才計算 bonusXP，確保中斷時正確重置
+        let bonusXP = min(profile.streakDays, 7) * 10
         addXP(bonusXP)
         return bonusXP
     }
@@ -33,8 +39,7 @@ final class GameStore {
     func collectStamp(city: String) {
         guard !profile.stamps.contains(city) else { return }
         profile.stamps.append(city)
-        addXP(50)
-        persist()
+        addXP(50) // addXP 內部已呼叫 persist()，不重複呼叫
     }
 
     func addXPForReading() {
