@@ -65,7 +65,7 @@ final class SearchViewModelTests: XCTestCase {
     func testResults_populated_onSuccess() async {
         let article = Article(
             id: "1", title: "Test", author: "Author", authorSlug: nil,
-            date: Date(), tags: [], imageURL: nil, slug: "test", excerpt: "", contentHTML: nil
+            date: Date(), tags: [], imageURL: nil, slug: "test", excerpt: "", contentHTML: nil, city: nil
         )
         let vm = SearchViewModel(service: SucceedingArticleService(articles: [article]))
         vm.keyword = "test"
