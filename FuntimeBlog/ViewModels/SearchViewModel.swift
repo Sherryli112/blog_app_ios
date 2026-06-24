@@ -50,7 +50,7 @@ final class SearchViewModel {
     }
 
     func loadMore() async {
-        guard hasMore, !isLoadingMore else { return }
+        guard hasMore, !isLoadingMore, !isSearching else { return }
         isLoadingMore = true
         await fetchPage()
         isLoadingMore = false

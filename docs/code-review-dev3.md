@@ -175,6 +175,104 @@ let sort = sortMode == .hot ? "hot_rank:asc" : "publishedAt:desc"
 
 ---
 
+---
+
+## 第二次審查（2026-06-24）
+
+> 審查工具：平行多角度靜態分析（Angle A 逐行掃描、Angle B/C 跨檔追蹤、安全角度、效率角度）＋ 獨立 verifier 確認
+> 重新評估說明：部分疑似問題經確認為故意設計，不列為 bug。
+
+### 故意設計（非 bug）
+
+| 項目 | 說明 |
+|------|------|
+| `AuthStore.logout()` 未清 Keychain | Keychain 儲存的是本地帳號憑證（密碼雜湊），不是 JWT session token。登出只需結束 session，不應刪除帳號；清除後使用者將永久無法登入 |
+| `FunTimeAPI.get()` 無 Authorization header | 此方法僅用於公開的部落格內容（文章、分類、搜尋）。需認證的 `APIAuthService.fetchMe()` 有獨立實作並帶 Bearer token |
+
+---
+
+### 安全問題
+
+#### S1 — 🔴 使用者資料（含 email）以明文存入 UserDefaults ✅ 已修復（2026-06-24）
+
+**檔案**：`FuntimeBlog/Storage/AuthStore.swift` 第 20–22 行
+
+**問題**：完整的 `User` 物件（含 email）透過 `JSONEncoder` 序列化後存入 `UserDefaults`。UserDefaults 是未加密的 `.plist`，在未加密的 iTunes/Finder 備份中以明文暴露。
+
+```swift
+if let data = try? JSONEncoder().encode(user) {
+    UserDefaults.standard.set(data, forKey: Self.userKey)  // ← 明文 PII
+}
+```
+
+**修正方向**：僅存非敏感欄位（如 username），或改用 Keychain 儲存。
+
+---
+
+### 穩定性問題
+
+#### S2 — 🟠 `GameStore.checkIn()` 強制解包 Calendar，潛在 crash ✅ 已修復（2026-06-24）
+
+**檔案**：`FuntimeBlog/Storage/GameStore.swift` 第 26 行
+
+**問題**：`Calendar.current.date(byAdding:)` 回傳 `Optional<Date>`，但直接加 `!` 強制解包。在非 Gregorian 曆法裝置上日期運算可能回傳 nil，導致每次簽到都 crash。
+
+```swift
+let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!  // ← 強制解包
+```
+
+**修正**：`guard let yesterday = ... else { return }` 或 `?? Date()`。
+
+---
+
+### 資料正確性問題
+
+#### S3 — 🟡 簽到按鈕顯示的 XP 與實際發放不符 ✅ 已修復（2026-06-24）
+
+**檔案**：`FuntimeBlog/Views/Profile/CheckInView.swift` 第 42 行
+
+**問題**：按鈕標籤用 `(streakDays + 1) * 10` 預測 XP，但若連續打卡中斷，`GameStore.checkIn()` 會將 `streakDays` 重置為 1 並只發 10 XP。使用者看到「+40 XP」但 alert 顯示「+10 XP」，體驗不一致。
+
+```swift
+"今日簽到 (+\(min(gameStore.profile.streakDays + 1, 7) * 10) XP)"
+// streakDays=3 但昨天未打卡 → 顯示 40 XP，實際得 10 XP
+```
+
+**修正**：按鈕文字改為通用文案（如「今日簽到」），實際 XP 在 alert 中顯示即可。
+
+---
+
+#### S4 — 🟡 `SearchViewModel.loadMore()` 與 `performSearch()` 有 race condition ✅ 已修復（2026-06-24）
+
+**檔案**：`FuntimeBlog/ViewModels/SearchViewModel.swift` 第 52 行
+
+**問題**：`loadMore()` 只檢查 `isLoadingMore`，未檢查 `isSearching`。使用者輸入新關鍵字觸發 `performSearch()`（重置 `currentPage=0`）的同時滾動觸發 `loadMore()`，兩者並發請求同一頁，結果被 append 兩次。
+
+```swift
+func loadMore() async {
+    guard hasMore, !isLoadingMore else { return }  // ← 未 guard isSearching
+    ...
+}
+```
+
+**修正**：`guard hasMore, !isLoadingMore, !isSearching else { return }`。
+
+---
+
+### 已修復項目（本次 session）
+
+#### F1 — ✅ 已修：`LocalAuthService` Keychain 寫入失敗被靜默吞掉
+
+**修復日期**：2026-06-24
+**修改檔案**：
+- `FuntimeBlog/Storage/KeychainHelper.swift` — `save()` 改為 `@discardableResult func save(...) -> Bool`，回傳 `SecItemAdd` 的實際結果
+- `FuntimeBlog/Networking/LocalAuthService.swift` — `register()` 加 `guard KeychainHelper.save(...) else { throw ... }`，寫入失敗時拋出明確錯誤
+- `FuntimeBlogTests/LocalAuthServiceTests.swift` — 新增 `testKeychainSave_returnsTrue_onSuccess` 及 `testRegister_canLoginAfterRegister_keychainIntact` 測試
+
+**問題根因**：`KeychainHelper.save()` 回傳 `Void`，`SecItemAdd` 的 `OSStatus` 被丟棄。若裝置鎖定或儲存空間不足導致 Keychain 寫入失敗，`register()` 仍回傳成功的 `User`，使用者以為帳號建立完成，但下次啟動 app 呼叫 `loadUser()` 得到 nil，永遠無法登入且顯示「帳號不存在」。
+
+---
+
 ## 次要建議（不影響正確性）
 
 | 項目 | 說明 |

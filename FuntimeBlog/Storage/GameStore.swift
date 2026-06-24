@@ -23,7 +23,7 @@ final class GameStore {
 
     func checkIn() -> Int {
         guard profile.canCheckInToday else { return 0 }
-        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+        guard let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) else { return 0 }
         let isConsecutive = profile.lastCheckIn.map {
             Calendar.current.isDate($0, inSameDayAs: yesterday)
         } ?? false

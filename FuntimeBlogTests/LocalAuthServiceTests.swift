@@ -78,6 +78,21 @@ final class LocalAuthServiceTests: XCTestCase {
         XCTAssertThrowsError(try service.login(identifier: "nobody@test.com", password: "anything"))
     }
 
+    // MARK: - keychain save failure
+
+    func testKeychainSave_returnsTrue_onSuccess() {
+        let saved = KeychainHelper.save("test_value", for: "tdd_test_key")
+        XCTAssertTrue(saved, "Keychain 寫入成功時應回傳 true")
+        KeychainHelper.delete(for: "tdd_test_key")
+    }
+
+    func testRegister_canLoginAfterRegister_keychainIntact() throws {
+        _ = try service.register(username: "alice", email: "alice@test.com", password: "pass123")
+        // 若 Keychain 寫入失敗被靜默吞掉，login 會拋出「帳號不存在」
+        XCTAssertNoThrow(try service.login(identifier: "alice@test.com", password: "pass123"),
+                         "register 成功後必須能夠 login，Keychain 寫入不能靜默失敗")
+    }
+
     // MARK: - password security
 
     func testPasswordNotStoredInPlainText() throws {

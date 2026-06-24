@@ -38,9 +38,7 @@ struct CheckInView: View {
                 showReward = true
             } label: {
                 Label(
-                    gameStore.profile.canCheckInToday
-                        ? "今日簽到 (+\(min(gameStore.profile.streakDays + 1, 7) * 10) XP)"
-                        : "今日已簽到",
+                    gameStore.profile.canCheckInToday ? "今日簽到" : "今日已簽到",
                     systemImage: gameStore.profile.canCheckInToday ? "star.fill" : "checkmark.circle.fill"
                 )
             }

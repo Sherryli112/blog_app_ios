@@ -2,7 +2,8 @@ import Foundation
 import Security
 
 enum KeychainHelper {
-    static func save(_ value: String, for key: String) {
+    @discardableResult
+    static func save(_ value: String, for key: String) -> Bool {
         let data = Data(value.utf8)
         let query: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
@@ -15,7 +16,7 @@ enum KeychainHelper {
             kSecValueData: data,
             kSecAttrAccessible: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
         ]
-        SecItemAdd(attributes as CFDictionary, nil)
+        return SecItemAdd(attributes as CFDictionary, nil) == errSecSuccess
     }
 
     static func load(for key: String) -> String? {

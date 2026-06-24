@@ -26,7 +26,9 @@ struct LocalAuthService {
               let json = String(data: data, encoding: .utf8) else {
             throw AuthError.invalidCredentials("儲存失敗，請再試一次")
         }
-        KeychainHelper.save(json, for: Self.userKey)
+        guard KeychainHelper.save(json, for: Self.userKey) else {
+            throw AuthError.invalidCredentials("帳號儲存失敗，請再試一次")
+        }
         return User(id: 1, username: username, email: email, confirmed: true, blocked: false)
     }
 

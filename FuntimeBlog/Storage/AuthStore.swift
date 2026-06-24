@@ -9,7 +9,8 @@ final class AuthStore {
     var isLoggedIn: Bool { user != nil }
 
     init() {
-        if let data = UserDefaults.standard.data(forKey: Self.userKey),
+        if let json = KeychainHelper.load(for: Self.userKey),
+           let data = json.data(using: .utf8),
            let saved = try? JSONDecoder().decode(User.self, from: data) {
             user = saved
         }
@@ -17,13 +18,14 @@ final class AuthStore {
 
     func save(user: User) {
         self.user = user
-        if let data = try? JSONEncoder().encode(user) {
-            UserDefaults.standard.set(data, forKey: Self.userKey)
+        if let data = try? JSONEncoder().encode(user),
+           let json = String(data: data, encoding: .utf8) {
+            KeychainHelper.save(json, for: Self.userKey)
         }
     }
 
     func logout() {
         user = nil
-        UserDefaults.standard.removeObject(forKey: Self.userKey)
+        KeychainHelper.delete(for: Self.userKey)
     }
 }

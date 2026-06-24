@@ -26,6 +26,18 @@ private struct SucceedingArticleService: ArticleServing {
     func regions() async throws -> [Region] { [] }
 }
 
+private struct MultiPageArticleService: ArticleServing {
+    func fetchArticles(page: Int, query: ArticleQuery) async throws -> ArticlePage {
+        let article = Article(
+            id: "\(page)", title: "Article \(page)", author: "Author", authorSlug: nil,
+            date: Date(), tags: [], imageURL: nil, slug: "slug-\(page)", excerpt: "", contentHTML: nil
+        )
+        return ArticlePage(articles: [article], page: page, pageCount: 2)
+    }
+    func articleDetail(slug: String) async throws -> Article { throw URLError(.badURL) }
+    func regions() async throws -> [Region] { [] }
+}
+
 // MARK: - Tests
 
 final class SearchViewModelTests: XCTestCase {
@@ -60,6 +72,19 @@ final class SearchViewModelTests: XCTestCase {
         await vm.performSearch()
         XCTAssertNil(vm.searchError)
         XCTAssertTrue(vm.noResults)
+    }
+
+    func testLoadMore_doesNotRun_whenSearchIsInProgress() async {
+        let vm = SearchViewModel(service: MultiPageArticleService())
+        vm.keyword = "test"
+        await vm.performSearch()                  // 載入第 1 頁，hasMore = true
+        let countAfterPage1 = vm.results.count
+
+        vm.isSearching = true                     // 模擬新搜尋進行中
+        await vm.loadMore()                       // 應被 guard 擋住
+
+        XCTAssertEqual(vm.results.count, countAfterPage1,
+                       "isSearching 為 true 時，loadMore 不應執行並新增結果")
     }
 
     func testResults_populated_onSuccess() async {
