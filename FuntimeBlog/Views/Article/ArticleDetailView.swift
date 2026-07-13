@@ -4,7 +4,6 @@ struct ArticleDetailView: View {
     @State private var viewModel: ArticleDetailViewModel
     @Environment(FavoritesStore.self) private var favorites
     @Environment(ReadingHistoryStore.self) private var history
-    @Environment(GameStore.self) private var gameStore
     @Environment(\.openURL) private var openURL
     @State private var isFavorite = false
 
@@ -20,7 +19,7 @@ struct ArticleDetailView: View {
         _viewModel = State(initialValue: ArticleDetailViewModel(article: article))
     }
 
-    private var article: Article { viewModel.summary }
+    private var article: Article { viewModel.article }
 
     var body: some View {
         Group {
@@ -67,6 +66,7 @@ struct ArticleDetailView: View {
                 }
                 .glassCircle()
                 .sensoryFeedback(.impact(weight: .medium), trigger: isFavorite)
+                .accessibilityLabel(isFavorite ? "取消收藏" : "加入收藏")
             }
             ToolbarItem(placement: .topBarTrailing) {
                 ShareLink(item: article.title)
@@ -76,14 +76,8 @@ struct ArticleDetailView: View {
         .task {
             isFavorite = favorites.isFavorite(article)
             await viewModel.load()
-            // 只在文章成功載入後才記錄閱讀與給予 XP，避免載入失敗時無限刷分
             if case .loaded = viewModel.contentState {
                 history.append(article)
-                gameStore.addXPForReading()
-                // tags 順序為 [theme, city]，取 last 才是城市
-                if let city = article.tags.last {
-                    gameStore.collectStamp(city: city)
-                }
             }
         }
     }
@@ -95,5 +89,4 @@ struct ArticleDetailView: View {
     }
     .environment(FavoritesStore())
     .environment(ReadingHistoryStore())
-    .environment(GameStore())
 }

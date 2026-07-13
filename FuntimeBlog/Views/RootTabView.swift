@@ -41,12 +41,6 @@ struct RootTabView: View {
             }
             .tabItem { Label("收藏", systemImage: "heart.fill") }
             .tag(3)
-
-            NavigationStack {
-                ProfileView()
-            }
-            .tabItem { Label("個人", systemImage: "person.fill") }
-            .tag(4)
         }
         .tint(AppTheme.Color.primary)
         .fontDesign(.rounded)
@@ -57,6 +51,4 @@ struct RootTabView: View {
     RootTabView()
         .environment(FavoritesStore())
         .environment(ReadingHistoryStore())
-        .environment(AuthStore())
-        .environment(GameStore())
 }

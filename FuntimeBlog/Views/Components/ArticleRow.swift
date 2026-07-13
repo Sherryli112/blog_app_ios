@@ -51,6 +51,7 @@ struct ArticleRow: View {
                 }
             }
             Spacer(minLength: 0)
+            FavoriteButton(article: article)
         }
         .contentShape(Rectangle())
     }
@@ -59,4 +60,5 @@ struct ArticleRow: View {
 #Preview {
     ArticleRow(article: SampleData.articles[0])
         .padding()
+        .environment(FavoritesStore())
 }

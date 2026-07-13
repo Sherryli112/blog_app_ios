@@ -9,27 +9,28 @@ final class ArticleDetailViewModel {
         case failed(String)
     }
 
-    let summary: Article
+    private(set) var article: Article
     private let service: ArticleServing
     var contentState: ContentState = .loading
 
     init(article: Article, service: ArticleServing = APIArticleService()) {
-        self.summary = article
+        self.article = article
         self.service = service
     }
 
     func load() async {
-        if let html = summary.contentHTML, !html.isEmpty {
+        if let html = article.contentHTML, !html.isEmpty {
             contentState = .loaded(html)
             return
         }
-        guard !summary.slug.isEmpty else {
-            contentState = .loaded("<p>\(summary.excerpt)</p>")
+        guard !article.slug.isEmpty else {
+            contentState = .loaded("<p>\(article.excerpt)</p>")
             return
         }
         contentState = .loading
         do {
-            let full = try await service.articleDetail(slug: summary.slug)
+            let full = try await service.articleDetail(slug: article.slug)
+            article = full
             contentState = .loaded(full.contentHTML ?? "<p>\(full.excerpt)</p>")
         } catch {
             contentState = .failed("無法載入文章內容，請稍後再試。")

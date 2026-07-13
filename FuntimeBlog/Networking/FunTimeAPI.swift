@@ -11,10 +11,11 @@ enum FunTimeAPI {
     }
 
     static func date(_ string: String?) -> Date {
-        guard let string else { return Date() }
+        // 解析失敗時退回極舊日期而非「現在」，避免壞資料在 publishedAt:desc 排序中被誤判成剛發佈而排到最上方。
+        guard let string else { return .distantPast }
         return isoWithFraction.date(from: string)
             ?? isoPlain.date(from: string)
-            ?? Date()
+            ?? .distantPast
     }
 
     private static let isoWithFraction: ISO8601DateFormatter = {

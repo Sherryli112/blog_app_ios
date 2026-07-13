@@ -37,6 +37,7 @@ struct SearchView: View {
         .searchable(text: $viewModel.keyword, prompt: "搜尋文章")
         .scrollDismissesKeyboard(.interactively)
         .onChange(of: viewModel.keyword) { _, _ in viewModel.onKeywordChange() }
+        .onDisappear { viewModel.cancelPendingSearch() }
         .navigationDestination(for: Article.self) { article in
             ArticleDetailView(article: article)
         }
@@ -94,5 +95,6 @@ struct SearchView: View {
     NavigationStack {
         SearchView()
     }
+    .environment(FavoritesStore())
     .environment(ReadingHistoryStore())
 }

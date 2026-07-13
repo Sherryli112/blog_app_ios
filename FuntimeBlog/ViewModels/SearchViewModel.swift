@@ -56,6 +56,11 @@ final class SearchViewModel {
         isLoadingMore = false
     }
 
+    func cancelPendingSearch() {
+        searchTask?.cancel()
+        searchTask = nil
+    }
+
     private func fetchPage() async {
         let query = ArticleQuery(keyword: keyword.trimmingCharacters(in: .whitespaces))
         do {

@@ -27,6 +27,10 @@ struct ArticleCard: View {
             .frame(maxWidth: .infinity)
             .frame(height: 200)
             .clipped()
+            .overlay(alignment: .topTrailing) {
+                FavoriteButton(article: article, circular: true)
+                    .padding(AppTheme.Spacing.sm)
+            }
 
             VStack(alignment: .leading, spacing: AppTheme.Spacing.sm) {
                 if !article.tags.isEmpty {
@@ -66,4 +70,5 @@ struct ArticleCard: View {
 #Preview {
     ArticleCard(article: SampleData.articles[0])
         .padding()
+        .environment(FavoritesStore())
 }

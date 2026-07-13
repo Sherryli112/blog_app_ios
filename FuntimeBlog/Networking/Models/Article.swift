@@ -24,14 +24,16 @@ struct ArticleQuery: Hashable {
     var category: String?
     var city: String?
     var tag: String?
+    var authorSlug: String?
     var keyword: String?
     var sort: String?
 
     init(category: String? = nil, city: String? = nil, tag: String? = nil,
-         keyword: String? = nil, sort: String? = nil) {
+         authorSlug: String? = nil, keyword: String? = nil, sort: String? = nil) {
         self.category = category
         self.city = city
         self.tag = tag
+        self.authorSlug = authorSlug
         self.keyword = keyword
         self.sort = sort
     }

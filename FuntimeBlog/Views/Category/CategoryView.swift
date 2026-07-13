@@ -17,6 +17,8 @@ struct CategoryView: View {
                 } actions: {
                     Button("重試") { Task { await viewModel.reload() } }
                 }
+            case .loaded where viewModel.regions.isEmpty:
+                ContentUnavailableView("目前沒有可瀏覽的分類", systemImage: "tray")
             case .loaded:
                 regionList
             }

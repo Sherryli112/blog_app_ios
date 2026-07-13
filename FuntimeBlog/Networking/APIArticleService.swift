@@ -66,7 +66,7 @@ private struct ArticleDetailDTO: Decodable {
     let cover: CoverDTO?
     let author: AuthorDTO?
     let theme: NamedDTO?
-    let category: NamedDTO?
+    let city: NamedDTO?
 
     func toArticle() -> Article {
         Article(
@@ -75,7 +75,7 @@ private struct ArticleDetailDTO: Decodable {
             author: author?.name ?? "FunTime",
             authorSlug: author?.slug,
             date: FunTimeAPI.date(publishedAt),
-            tags: [category?.displayName, theme?.displayName].compactMap { $0 },
+            tags: [theme?.displayName, city?.displayName].compactMap { $0 },
             imageURL: FunTimeAPI.imageURL(cover?.url),
             slug: slug,
             excerpt: excerpt ?? "",
@@ -122,6 +122,9 @@ struct APIArticleService: ArticleServing {
         }
         if let tag = query.tag, !tag.isEmpty {
             items.append(URLQueryItem(name: "filters[tags][name][$eq]", value: tag))
+        }
+        if let authorSlug = query.authorSlug, !authorSlug.isEmpty {
+            items.append(URLQueryItem(name: "filters[author][slug][$eq]", value: authorSlug))
         }
         if let keyword = query.keyword, !keyword.isEmpty {
             items.append(URLQueryItem(name: "filters[title][$containsi]", value: keyword))

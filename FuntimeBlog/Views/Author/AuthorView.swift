@@ -6,7 +6,8 @@ struct AuthorView: View {
     @State private var articles: [Article] = []
     @State private var isLoading = false
     @State private var hasLoaded = false
-    private let service: ArticleServing = APIArticleService()
+    @State private var loadError: String?
+    var service: ArticleServing = APIArticleService()
 
     var body: some View {
         List {
@@ -32,6 +33,14 @@ struct AuthorView: View {
                 if isLoading {
                     HStack { Spacer(); ProgressView(); Spacer() }
                         .listRowSeparator(.hidden)
+                } else if let loadError {
+                    ContentUnavailableView {
+                        Label("載入失敗", systemImage: "exclamationmark.triangle")
+                    } description: {
+                        Text(loadError)
+                    } actions: {
+                        Button("重試") { Task { await load() } }
+                    }
                 } else {
                     ForEach(articles) { article in
                         NavigationLink(value: article) {
@@ -53,14 +62,22 @@ struct AuthorView: View {
         }
         .task {
             guard !hasLoaded else { return }
-            isLoading = true
-            let query = ArticleQuery(tag: authorSlug)
-            if let page = try? await service.fetchArticles(page: 1, query: query) {
-                articles = page.articles
-            }
-            isLoading = false
-            hasLoaded = true
+            await load()
         }
+    }
+
+    private func load() async {
+        isLoading = true
+        loadError = nil
+        let query = ArticleQuery(authorSlug: authorSlug)
+        do {
+            let page = try await service.fetchArticles(page: 1, query: query)
+            articles = page.articles
+        } catch {
+            loadError = error.localizedDescription
+        }
+        isLoading = false
+        hasLoaded = true
     }
 }
 
