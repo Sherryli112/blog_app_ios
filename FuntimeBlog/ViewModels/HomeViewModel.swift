@@ -54,7 +54,7 @@ final class HomeViewModel {
     }
 
     private func fetchPage() async {
-        let sort = sortMode == .hot ? "hot_rank:desc" : "publishedAt:desc"
+        let sort = sortMode == .hot ? "hot_rank:asc" : "custom_published_at:desc"
         let query = ArticleQuery(sort: sort)
         do {
             let result = try await service.fetchArticles(page: currentPage + 1, query: query)

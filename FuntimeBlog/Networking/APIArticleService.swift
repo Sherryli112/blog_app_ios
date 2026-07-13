@@ -112,7 +112,7 @@ struct APIArticleService: ArticleServing {
             URLQueryItem(name: "pagination[page]", value: String(page)),
             URLQueryItem(name: "pagination[pageSize]", value: String(pageSize)),
             URLQueryItem(name: "withExtraData", value: "true"),
-            URLQueryItem(name: "sort", value: query.sort ?? "publishedAt:desc"),
+            URLQueryItem(name: "sort", value: query.sort ?? "custom_published_at:desc"),
         ]
         if let category = query.category, !category.isEmpty {
             items.append(URLQueryItem(name: "filters[ft_category][display_name][$eq]", value: category))

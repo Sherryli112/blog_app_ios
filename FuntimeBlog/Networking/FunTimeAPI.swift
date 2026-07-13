@@ -11,7 +11,7 @@ enum FunTimeAPI {
     }
 
     static func date(_ string: String?) -> Date {
-        // 解析失敗時退回極舊日期而非「現在」，避免壞資料在 publishedAt:desc 排序中被誤判成剛發佈而排到最上方。
+        // 解析失敗時退回極舊日期而非「現在」，避免壞資料被誤判成剛發佈的文章。
         guard let string else { return .distantPast }
         return isoWithFraction.date(from: string)
             ?? isoPlain.date(from: string)
