@@ -5,40 +5,49 @@ struct HomeView: View {
     @State private var viewModel = HomeViewModel()
 
     var body: some View {
-        Group {
-            switch viewModel.loadState {
-            case .idle, .loading where viewModel.articles.isEmpty:
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            case .failed(let message) where viewModel.articles.isEmpty:
-                ContentUnavailableView {
-                    Label("載入失敗", systemImage: "exclamationmark.triangle")
-                } description: {
-                    Text(message)
-                } actions: {
-                    Button("重試") { Task { await viewModel.reload() } }
-                }
-            default:
-                articleList
-            }
-        }
-        .navigationTitle("FunTime")
-        .navigationBarTitleDisplayMode(.large)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Picker("排序", selection: $viewModel.sortMode) {
-                    ForEach(HomeViewModel.SortMode.allCases, id: \.self) { mode in
-                        Text(mode.rawValue).tag(mode)
+        VStack(spacing: 0) {
+            header
+            Group {
+                switch viewModel.loadState {
+                case .idle, .loading where viewModel.articles.isEmpty:
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                case .failed(let message) where viewModel.articles.isEmpty:
+                    ContentUnavailableView {
+                        Label("載入失敗", systemImage: "exclamationmark.triangle")
+                    } description: {
+                        Text(message)
+                    } actions: {
+                        Button("重試") { Task { await viewModel.reload() } }
                     }
+                default:
+                    articleList
                 }
-                .pickerStyle(.segmented)
-                .fixedSize()
             }
         }
+        .toolbar(.hidden, for: .navigationBar)
         .task { await viewModel.load() }
         .onChange(of: viewModel.sortMode) { _, _ in
             Task { await viewModel.onSortModeChange() }
         }
+    }
+
+    private var header: some View {
+        HStack(alignment: .center) {
+            Image("Logo")
+                .accessibilityLabel("FunTime")
+            Spacer()
+            Picker("排序", selection: $viewModel.sortMode) {
+                ForEach(HomeViewModel.SortMode.allCases, id: \.self) { mode in
+                    Text(mode.rawValue).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .fixedSize()
+        }
+        .padding(.horizontal, AppTheme.Spacing.lg)
+        .padding(.top, 4)
+        .padding(.bottom, 8)
     }
 
     private var articleList: some View {
