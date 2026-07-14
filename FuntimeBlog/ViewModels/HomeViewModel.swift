@@ -54,6 +54,11 @@ final class HomeViewModel {
     }
 
     private func fetchPage() async {
+        // 注意：官網 www.funtime.com.tw/blog 實際上永遠導向舊系統 WordPress，
+        // 真正的「最新／熱門」排序來自舊系統 MySQL 的 blog_index_list 人工維護表，
+        // 沒有對外 API。這裡用 Strapi 既有欄位近似（custom_published_at 是編輯可覆寫
+        // 的顯示發佈時間；hot_rank 是人工標記的熱門分數，大部分文章沒有設值），
+        // 順序不會跟官網逐字一致，是已知、經確認可接受的近似值。
         let sort = sortMode == .hot ? "hot_rank:asc" : "custom_published_at:desc"
         let query = ArticleQuery(sort: sort)
         do {
