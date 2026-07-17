@@ -2,7 +2,9 @@ import Foundation
 
 enum FunTimeAPI {
     static let proxyBase = URL(string: "https://www.funtime.com.tw/api/proxy/")!
-    static let mediaHost = "https://mgmt.funtime.com.tw"
+    // 圖片走對外公開主機 upd-api（正式站也用這個）。mgmt 是管理用主機，
+    // 外部網路會被 Cloudflare 擋 403，只有公司內網連得到，故不能用於 App 取圖。
+    static let mediaHost = "https://upd-api.funtime.com.tw"
 
     static func imageURL(_ path: String?) -> URL? {
         guard let path, !path.isEmpty else { return nil }
