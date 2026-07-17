@@ -4,14 +4,39 @@
 >
 > ⚠️ **前提限制**：iOS 的建置、簽署、上傳都只能在 macOS 上執行（Xcode、`xcodebuild`、Transporter 都沒有 Windows/Linux 版本），跟 Android 的 Gradle 可跨平台建置不同。這份清單假設你已經有 macOS 環境可用（自己的 Mac、租用的雲端 Mac、或借用的 Mac），沒有 Mac 的話這些步驟都無法執行。
 >
-> 目前專案狀態（2026-07-14 更新）：
+> 目前專案狀態（2026-07-17 更新）：
 > - Bundle ID：`com.funtime.FuntimeBlog`
-> - `CODE_SIGN_STYLE = Automatic`（已設定自動簽署，正常情況下不需要手動管理憑證）
-> - `DEVELOPMENT_TEAM`：**尚未設定（空）**——需在 Xcode 手動選 Team，見「四、簽署設定」
-> - `MARKETING_VERSION = 1.0`、`CURRENT_PROJECT_VERSION = 1`（版本字串／build 號，還未曾上傳過任何版本）
-> - App icon：**已放入**（1024×1024，不透明無 alpha，符合 App Store 規範）
-> - Privacy Manifest：**已放入** `FuntimeBlog/PrivacyInfo.xcprivacy`（宣告 UserDefaults 用途 `CA92.1`；無追蹤、無資料蒐集、無第三方 SDK）
+> - **✅ 已成功上傳 build `1.0 (1)` 到 TestFlight**（2026-07-17，用手動簽署，見下方「★ 實測紀錄」）
+> - Team：`FUNTIME TECHNOLOGIES CO., LTD.`（Team ID `84BKQS2RVM`）
+> - App ID `com.funtime.FuntimeBlog`：**已註冊**
+> - Distribution 憑證 + App Store 描述檔「FuntimeBlog App Store」：**已建立**（存於操作用的 Mac）
+> - `MARKETING_VERSION = 1.0`、`CURRENT_PROJECT_VERSION = 1`（下次重傳要把 build 號 +1）
+> - App icon：**已放入**（1024×1024，不透明無 alpha）
+> - Privacy Manifest：**已放入** `FuntimeBlog/PrivacyInfo.xcprivacy`（UserDefaults 用途 `CA92.1`；無追蹤、無資料蒐集、無第三方 SDK）
 > - Apple Developer Program 會員資格：**已確認擁有**
+
+## ★ 實測紀錄（2026-07-17 首次成功上傳，務必先讀）
+
+這次實際跑一遍，踩到兩個大坑，`Automatic` 自動簽署在本團隊環境下**跑不通**，最後是靠**手動簽署**成功。若下次還是這台 Mac、同一個 App，憑證/描述檔都還在效期內，直接跳到「六、建置與上傳（手動簽署）」即可。
+
+### 坑一：必須是 Admin 角色（Developer / App 管理都不行）
+- 註冊 App ID、建立 Distribution 憑證，只有 **Admin（管理）/ 帳號持有人** 能做。**Developer（開發者）和 App Manager（App 管理）都不行**（App 管理很容易被誤選，中文「管理」才是 Admin）。
+- 確認/調整角色：App Store Connect → 使用者與存取權限 → 點你的名字 → 角色。
+- 本公司可協助升權限的人：**廖偉帆 `p988744@gmail.com`（管理）**、**`dev@bitpod.cc`（管理）**、**帳號持有人 ShenJengjie `funtime.mapp@gmail.com`**。
+- 用完可以請對方把你改回 App 管理；日常重傳新版(憑證/描述檔還在)不需要 Admin，但憑證/描述檔到期(約一年)或要開新 App/新能力時要再借一次 Admin。
+
+### 坑二：自動簽署會卡「Communication with Apple failed / no devices」
+- 症狀：Signing & Capabilities 一直紅字 `Your team has no devices from which to generate a provisioning profile` + `No profiles for '...' were found`，`Try Again` 無效，換網路、重登、升 Admin 都沒用。
+- 原因：自動簽署會想先建一張**開發用(Development)描述檔**，而開發描述檔一定要團隊至少註冊 1 台裝置；本團隊 0 台裝置 → 造不出來 → 整個卡住。**跟網路/協議無關。**
+- 解法：**不要用自動簽署，改用手動簽署 + App Store 描述檔**（App Store 描述檔不需要任何裝置）。
+
+### 這次成功的完整路徑
+1. （Admin）developer.apple.com → Identifiers → `+` → 註冊 App ID `com.funtime.FuntimeBlog`。
+2. （Admin）Xcode → Settings → Accounts → 選團隊 → **Manage Certificates → `+` → Apple Distribution**（Xcode 自動產生發佈憑證，免手動 CSR）。
+3. （Admin）developer.apple.com → Profiles → `+` → **App Store Connect** → 選該 App ID + 該 Distribution 憑證 → 命名 `FuntimeBlog App Store` → Download → 對檔案點兩下安裝。
+4. **手動簽署 Archive**（見「六」），用命令列指定該憑證+描述檔，一次成功。
+5. 把 `.xcarchive` 丟進 Xcode Organizer → Distribute App → App Store Connect → Upload。
+6. 上傳成功後在 TestFlight：填**出口合規**(加密問題選第 4 個「未使用上方提及的任一種演算法」)、填**測試資訊**(外部測試必填，且**取消「需要登入」**因為本 App 無登入)、把 build 指派到內部/外部群組。內部測試免審即時可裝；外部測試要過 Beta App Review(約 1–2 天)。
 
 ## 零、快速路徑：把 build 送進 TestFlight 內部測試
 
@@ -30,9 +55,13 @@
 
 - [x] 已確認公司有會員資格 ✅ 2026-07-13
 
-## 二、App ID 註冊（如果還沒註冊過）
+## 二、App ID 註冊（✅ 已完成；需 Admin 角色才做得到）
 
-- [ ] developer.apple.com → Certificates, IDs & Profiles → Identifiers → 新增 App ID
+> ⚠️ 這步需要 **Admin**（見「★ 實測紀錄 坑一」）。Developer/App 管理沒有「+」按鈕、建不了。
+> 本專案的 `com.funtime.FuntimeBlog` 已於 2026-07-17 註冊完成，下次不用重做。
+
+- [x] developer.apple.com → Certificates, IDs & Profiles → Identifiers → 新增 App ID ✅
+- [ ]（若日後要新開 App 才需要）以下為當時步驟：
 - [ ] 選 **App**（不是 App Clip／其他）
 - [ ] Bundle ID 選 **Explicit**，填 `com.funtime.FuntimeBlog`
 - [ ] Capabilities：目前這個乾淨版本沒有用到推播、iCloud 等額外能力，維持預設不勾選即可
@@ -49,6 +78,9 @@
 
 ## 四、簽署設定
 
+> ⚠️ **實測：本團隊環境下自動簽署跑不通**（no devices，見「★ 實測紀錄 坑二」），最後是用**手動簽署**成功。專案裡雖然是 `Automatic`，但實際 Archive 時用命令列覆寫成 Manual（見「六」）。
+> Distribution 憑證與 App Store 描述檔 `FuntimeBlog App Store` 已於 2026-07-17 建立完成（存於操作用的 Mac）。下方自動簽署說明保留備查，但目前不適用。
+
 - [ ] 專案已經是 `CODE_SIGN_STYLE = Automatic`，不需要手動建立憑證/描述檔
 - [ ] **先登入 Apple ID（最常被漏）**：Xcode 選單 → Settings…（`⌘ ,`）→ **Accounts** 分頁 → 左下角 **`+`** → **Apple ID** → 用公司 Apple ID 登入。**沒登入的話後面的 Team 下拉會是空的，看起來像「沒有那個按鈕」。**
 - [ ] 找到 Team 下拉的路徑：
@@ -64,14 +96,30 @@
 - [ ] 目前 `MARKETING_VERSION = 1.0`、`CURRENT_PROJECT_VERSION = 1`，這是第一次上傳，可以直接沿用不用改
 - [ ] ⚠️ 跟 Android 的 versionCode 邏輯一樣：**同一個 build number 不能重複上傳**，如果上傳後想改東西重傳，`CURRENT_PROJECT_VERSION` 要往上遞增（例如 1 → 2），`MARKETING_VERSION` 不用每次都改，等真的要對外發版時再決定語意化版本號
 
-## 六、建置與上傳
+## 六、建置與上傳（手動簽署，這次實際成功的做法）
 
-- [ ] Xcode 上方裝置選單，選 **Any iOS Device (arm64)**（如果選到模擬器，Product → Archive 會反白點不了）
-- [ ] Product → Archive，等建置完成（會需要幾分鐘）
-- [ ] 建置完成後自動跳出 Organizer 視窗，選剛剛的 Archive → **Distribute App**
-- [ ] 選 **App Store Connect** → **Upload**
-- [ ] 簽署選項選 **Automatically manage signing**
-- [ ] 一路下一步到完成，上傳時間視網路速度，通常幾分鐘到十幾分鐘
+> ⚠️ 自動簽署在本團隊環境會卡「no devices」（見「★ 實測紀錄 坑二」）。以下用手動簽署，前提是「二、App ID」「四、Distribution 憑證 + App Store 描述檔」都已備妥。
+
+**用命令列 Archive（實測一次成功）：**
+```bash
+cd <專案目錄>
+xcodebuild -project FuntimeBlog.xcodeproj -scheme FuntimeBlog \
+  -configuration Release \
+  -destination 'generic/platform=iOS' \
+  -archivePath /tmp/FuntimeBlog.xcarchive \
+  archive \
+  CODE_SIGN_STYLE=Manual \
+  DEVELOPMENT_TEAM=84BKQS2RVM \
+  CODE_SIGN_IDENTITY="Apple Distribution" \
+  PROVISIONING_PROFILE_SPECIFIER="FuntimeBlog App Store"
+```
+- [ ] 出現 `** ARCHIVE SUCCEEDED **` 即成功。
+- [ ] 把封存檔複製到 Organizer 看得到的位置：`cp -R /tmp/FuntimeBlog.xcarchive ~/Library/Developer/Xcode/Archives/<今天日期>/`
+- [ ] Xcode → Window → **Organizer** → 選該 Archive → **Distribute App** → **App Store Connect** → **Upload**（簽署選手動、選 `FuntimeBlog App Store` 描述檔最保險）→ 完成。
+
+**（替代）在 Xcode 圖形介面手動簽署：** Signing & Capabilities → **取消**「Automatically manage signing」→ Release 設定選 Team + 描述檔 `FuntimeBlog App Store` + 憑證 Apple Distribution → 裝置選 **Any iOS Device (arm64)** → Product → Archive。
+
+> 註：`-allowProvisioningUpdates` 的自動簽署命令列版本一樣會卡 no devices，不要用；手動簽署因為不跟 Apple 即時要描述檔，才過得了。
 
 ## 七、TestFlight 內部測試設定
 
@@ -97,4 +145,4 @@
 
 ---
 
-最後更新：2026-07-14（對應 `reading-only` 分支。已有 macOS 環境，可直接執行建置與上傳。本次補充：app icon 與 Privacy Manifest 已放入、修正 icon alpha、補上 Team 選取的詳細路徑。尚待手動操作：在 Xcode 登入 Apple ID 並選 Team，然後 Archive 上傳。）
+最後更新：2026-07-17（對應 `reading-only` 分支。**已成功上傳 build 1.0 (1) 到 TestFlight**。本次重點新增「★ 實測紀錄」：需 Admin 角色、自動簽署卡 no devices、改用手動簽署 + App Store 描述檔才成功，並記錄可協助升權限的公司 Admin 名單與命令列 Archive 指令。內部測試即時可裝；外部測試已送 Beta App Review 等待通過。）
