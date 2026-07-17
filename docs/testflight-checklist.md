@@ -6,7 +6,7 @@
 >
 > 目前專案狀態（2026-07-17 更新）：
 > - Bundle ID：`com.funtime.FuntimeBlog`
-> - **✅ 已成功上傳 build `1.0 (1)` 到 TestFlight**（2026-07-17，用手動簽署，見下方「★ 實測紀錄」）
+> - **✅ 已上傳並測通 build `1.0 (2)` TestFlight**（2026-07-17，手動簽署；(1) 有圖片載不出的 bug，(2) 已修，見「★ 實測紀錄 坑三」。內部＋外部通道皆實測圖片正常）
 > - Team：`FUNTIME TECHNOLOGIES CO., LTD.`（Team ID `84BKQS2RVM`）
 > - App ID `com.funtime.FuntimeBlog`：**已註冊**
 > - Distribution 憑證 + App Store 描述檔「FuntimeBlog App Store」：**已建立**（存於操作用的 Mac）
@@ -29,6 +29,13 @@
 - 症狀：Signing & Capabilities 一直紅字 `Your team has no devices from which to generate a provisioning profile` + `No profiles for '...' were found`，`Try Again` 無效，換網路、重登、升 Admin 都沒用。
 - 原因：自動簽署會想先建一張**開發用(Development)描述檔**，而開發描述檔一定要團隊至少註冊 1 台裝置；本團隊 0 台裝置 → 造不出來 → 整個卡住。**跟網路/協議無關。**
 - 解法：**不要用自動簽署，改用手動簽署 + App Store 描述檔**（App Store 描述檔不需要任何裝置）。
+
+### 坑三：圖片主機用了 `mgmt`（內網），外部網路 403 → 圖片載不出來
+- 症狀：模擬器、公司網路（WiFi）下圖片正常；但測試者用**行動網路 / 自家 WiFi** 開 App，**圖片全部載不出來**（空白／漸層底），文字內容正常。
+- 原因：`FunTimeAPI.mediaHost` 原本是 `https://mgmt.funtime.com.tw`（**管理用主機，只有公司內網連得到**）。API 回傳的 cover 是相對路徑，全被組成 mgmt 網址；外部網路經 Cloudflare 會回 **403 Forbidden**。
+- 驗證方法：拿圖片網址（例如 `https://mgmt.funtime.com.tw/uploads/xxx.jpeg`）在手機 **Safari + 行動網路**開 → 403 就中了；換 `upd-api.funtime.com.tw` 同一路徑 → 正常。
+- 解法：`mediaHost` 改成正式站對外實際使用的 **`https://upd-api.funtime.com.tw`**（commit `7e86380`）。實測行動網路 + 外部測試通道圖片正常。
+- ⚠️ 教訓：**模擬器和公司網路都走內網直連，圖看起來正常，只有「外部網路的實機」才會現形。所以驗收一定要用實機 + 關掉公司 WiFi（走行動網路）+ 走 TestFlight 測。**
 
 ### 這次成功的完整路徑
 1. （Admin）developer.apple.com → Identifiers → `+` → 註冊 App ID `com.funtime.FuntimeBlog`。
@@ -145,4 +152,4 @@ xcodebuild -project FuntimeBlog.xcodeproj -scheme FuntimeBlog \
 
 ---
 
-最後更新：2026-07-17（對應 `reading-only` 分支。**已成功上傳 build 1.0 (1) 到 TestFlight**。本次重點新增「★ 實測紀錄」：需 Admin 角色、自動簽署卡 no devices、改用手動簽署 + App Store 描述檔才成功，並記錄可協助升權限的公司 Admin 名單與命令列 Archive 指令。內部測試即時可裝；外部測試已送 Beta App Review 等待通過。）
+最後更新：2026-07-17（對應 `reading-only` 分支。**build 1.0 (2) 已上傳並在內部＋外部通道實測圖片正常**。「★ 實測紀錄」記錄三個坑：(坑一)需 Admin 角色、(坑二)自動簽署卡 no devices 需改手動簽署、(坑三)圖片主機 mgmt 在外網 403 需改 upd-api。附可協助升權限的公司 Admin 名單、命令列手動簽署 Archive 指令。重點教訓:圖片這類問題只有「實機 + 行動網路 + TestFlight」才驗得出來,公司網路/模擬器會誤判正常。）
